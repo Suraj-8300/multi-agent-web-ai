@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WebIntel — Autonomous Multi-Agent Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne+Mono&family=Syne:wght@600;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══ TOP BAR ═══ -->
+<header class="topbar">
+  <a class="logo" href="#">
+    <div class="logo-mark">WI</div>
+    <span class="logo-text">Web<span>Intel</span></span>
+  </a>
+  <span class="topbar-meta">// AUTONOMOUS MULTI-AGENT INTELLIGENCE</span>
+  <div class="topbar-right">
+    <span class="live-dot" id="statusDot">ONLINE</span>
+    <button class="tb-btn" onclick="toggleSidebar()">⧖ History</button>
+    <button class="tb-btn">? About</button>
+  </div>
+</header>
+
+<!-- ═══ QUERY SECTION ═══ -->
+<section class="query-section">
+  <div class="qs-top"><span class="section-tag">// Query</span></div>
+  <div class="qs-row">
+    <div class="query-input-wrap">
+      <input class="query-input" id="queryInput" type="text" placeholder="Enter a claim or research question to verify..."/>
+    </div>
+    <div class="select-wrap">
+      <select class="qs-select" id="modeSelect">
+        <option value="quick">Quick (~5s)</option>
+        <option value="research" selected>Research (~20s)</option>
+        <option value="fact_check">Fact Check (~10s)</option>
+        <option value="deep_dive">Deep Dive (~45s)</option>
+      </select>
+      <span class="select-arrow">▾</span>
+    </div>
+    <div class="select-wrap">
+      <select class="qs-select" id="typeSelect">
+        <option value="single" selected>Single</option>
+        <option value="compare">Compare</option>
+        <option value="track">Track / Monitor</option>
+        <option value="summarise_url">Summarise URL</option>
+      </select>
+      <span class="select-arrow">▾</span>
+    </div>
+    <button class="run-btn" id="runBtn">▶ Analyze</button>
+  </div>
+  <div class="example-row">
+    <span class="ex-chip" data-q="What is the current market cap of Reliance Industries?">Reliance market cap</span>
+    <span class="ex-chip" data-q="Compare Jio vs Airtel vs Vi — subscribers, revenue, 5G coverage" data-type="compare">Jio vs Airtel vs Vi</span>
+    <span class="ex-chip" data-q="What are the latest AI regulations being considered in India?">AI regulations India</span>
+    <span class="ex-chip" data-q="India GDP growth rate 2024">India GDP 2024</span>
+  </div>
+</section>
+
+<!-- ═══ EMPTY STATE ═══ -->
+<div class="empty-state visible" id="emptyState">
+  <div class="empty-icon">🔭</div>
+  <div class="empty-title">Ask WebIntel anything</div>
+  <div class="empty-sub">We'll verify it across multiple sources, surface conflicts, and score confidence — powered by parallel AI agents.</div>
+</div>
+
+<!-- ═══ MAIN CONTENT (hidden until query runs) ═══ -->
+<div id="mainContent" style="display:none;">
+<main class="main">
+
+  <!-- THREE-COLUMN LIVE PANEL -->
+  <div class="live-panel">
+    <!-- LEFT: AGENT TRACE -->
+    <div class="panel" id="tracePanel">
+      <div class="panel-head">
+        <span class="panel-title">Agent Trace</span>
+        <span class="panel-badge" id="traceStatus">IDLE</span>
+      </div>
+      <div class="panel-body"><div class="trace-list" id="traceList"></div></div>
+    </div>
+
+    <!-- CENTER: CLAIMS -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title" id="centerTitle">Verified Claims</span>
+        <span class="panel-badge" id="claimCount">0</span>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('claims',this)">Claims</button>
+        <button class="tab-btn" onclick="switchTab('compare',this)">Compare</button>
+      </div>
+      <div class="tab-content active" id="tab-claims"><div class="claims-list" id="claimsList"></div></div>
+      <div class="tab-content" id="tab-compare"><div id="compareContainer"></div></div>
+    </div>
+
+    <!-- RIGHT: SOURCES -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Sources</span>
+        <span class="panel-badge" id="sourcesCount">0</span>
+      </div>
+      <div class="panel-body"><div class="source-list" id="sourcesList"></div></div>
+    </div>
+  </div>
+
+  <!-- REPORT SECTION -->
+  <div class="report-section" id="reportSection" style="display:none;">
+    <div class="report-head">
+      <div>
+        <div class="report-title">Intelligence Report</div>
+        <div class="text-dim mt8" id="reportQuery"></div>
+      </div>
+      <div class="score-row" id="scoreRow"></div>
+    </div>
+    <div class="exec-body"><div class="exec-text" id="execText"></div></div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-row">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Conflict Log</span>
+        <span class="panel-badge" id="conflictBadge" style="border-color:rgba(255,74,107,0.3);color:var(--red);background:rgba(255,74,107,0.08);">0</span>
+      </div>
+      <div class="panel-body"><div class="conflict-list" id="conflictList"></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Citation Graph</span>
+        <span class="panel-badge">Agreements vs Conflicts</span>
+      </div>
+      <div class="chart-wrap"><canvas id="citationChart"></canvas></div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer-bar">
+  <span class="footer-label">Export:</span>
+  <button class="footer-btn" id="btnExportJson" disabled><span class="icon">⬇</span> JSON</button>
+  <button class="footer-btn" disabled><span class="icon">📄</span> PDF</button>
+  <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--text3);" id="footerMeta"></span>
+</footer>
+
+<!-- ═══ HISTORY SIDEBAR ═══ -->
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <span class="sidebar-title">Query History</span>
+    <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
+  </div>
+  <div class="sidebar-body" id="historyList"></div>
+</aside>
+
+</div>
+<script src="js/config.js"></script>
+<script src="js/engine.js"></script>
+</body>
+</html>

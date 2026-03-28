@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WebIntel — Autonomous Multi-Agent Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne+Mono&family=Syne:wght@600;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --bg:       #07090d;
+  --bg2:      #0c1018;
+  --bg3:      #111823;
+  --border:   #1c2a3a;
+  --border2:  #243447;
+  --cyan:     #00d4ff;
+  --green:    #00e5a0;
+  --amber:    #ffb300;
+  --red:      #ff4a6b;
+  --text:     #b8cfe0;
+  --text2:    #5a7a96;
+  --text3:    #2a4a64;
+  --mono:     'Syne Mono', monospace;
+  --display:  'Syne', sans-serif;
+  --body:     'DM Sans', sans-serif;
+  --r:        4px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* BG GRID */
+body::before {
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;z-index:0;
+}
+
+/* SCANLINE */
+body::after {
+  content:'';
+  position:fixed;inset:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  pointer-events:none;z-index:0;
+}
+
+.app { position:relative;z-index:1; }
+
+/* ── TOP BAR ── */
+.topbar {
+  display:flex;align-items:center;gap:16px;
+  padding:14px 28px;
+  border-bottom:1px solid var(--border);
+  background: rgba(7,9,13,0.95);
+  backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:100;
+}
+
+.logo {
+  display:flex;align-items:center;gap:10px;
+  text-decoration:none;
+}
+
+.logo-mark {
+  width:36px;height:36px;
+  border:1px solid var(--cyan);
+  display:grid;place-items:center;
+  font-family:var(--display);
+  font-size:13px;font-weight:800;
+  color:var(--cyan);
+  box-shadow:0 0 14px rgba(0,212,255,0.25);
+  flex-shrink:0;
+}
+
+.logo-text {
+  font-family:var(--display);
+  font-size:17px;font-weight:800;
+  color:#fff;letter-spacing:1px;
+}
+
+.logo-text span { color:var(--cyan); }
+
+.topbar-meta {
+  font-family:var(--mono);
+  font-size:10px;color:var(--text2);
+  letter-spacing:1px;
+  margin-left:4px;
+  display:none;
+}
+
+@media(min-width:600px){.topbar-meta{display:block;}}
+
+.topbar-right {
+  margin-left:auto;
+  display:flex;align-items:center;gap:10px;
+}
+
+.tb-btn {
+  background:transparent;
+  border:1px solid var(--border2);
+  color:var(--text2);
+  font-family:var(--mono);
+  font-size:10px;letter-spacing:1px;
+  padding:6px 14px;cursor:pointer;
+  text-transform:uppercase;
+  transition:all 0.2s;
+}
+.tb-btn:hover { border-color:var(--cyan);color:var(--cyan); }
+.tb-btn.active { border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,0.07); }
+
+.live-dot {
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:10px;
+  color:var(--green);letter-spacing:1px;
+}
+.live-dot::before {
+  content:'';width:6px;height:6px;
+  border-radius:50%;background:var(--green);
+  animation:livepulse 1.5s infinite;
+}
+@keyframes livepulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,229,160,0.5);}50%{opacity:0.6;box-shadow:0 0 0 4px rgba(0,229,160,0);}}
+
+/* ── QUERY SECTION ── */
+.query-section {
+  padding:32px 28px 24px;
+  border-bottom:1px solid var(--border);
+}
+
+.qs-top {
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:16px;
+}
+
+.section-tag {
+  font-family:var(--mono);font-size:10px;
+  color:var(--cyan);letter-spacing:3px;
+  text-transform:uppercase;
+}
+
+.qs-row {
+  display:flex;gap:10px;
+  flex-wrap:wrap;
+}
+
+.query-input-wrap {
+  flex:1;min-width:260px;
+  position:relative;
+}
+
+.query-input {
+  width:100%;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  color:#fff;
+  font-family:var(--mono);
+  font-size:13px;
+  padding:13px 18px;
+  outline:none;
+  border-radius:var(--r);
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.query-input:focus {
+  border-color:var(--cyan);
+  box-shadow:0 0 0 3px rgba(0,212,255,0.1);
+}
+.query-input::placeholder{color:var(--text3);}
+
+.select-wrap {
+  position:relative;
+  flex-shrink:0;
+}
+
+.qs-select {
+  appearance:none;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  color:var(--text);
+  font-family:var(--mono);
+  font-size:11px;
+  padding:13px 36px 13px 14px;
+  border-radius:var(--r);
+  cursor:pointer;outline:none;
+  transition:border-color 0.2s;
+  min-width:130px;
+}
+.qs-select:focus{border-color:var(--cyan);}
+
+.select-arrow {
+  position:absolute;right:12px;top:50%;
+  transform:translateY(-50%);
+  color:var(--text2);font-size:10px;
+  pointer-events:none;
+}
+
+.run-btn {
+  background:var(--cyan);
+  border:none;color:var(--bg);
+  font-family:var(--display);
+  font-size:13px;font-weight:800;
+  letter-spacing:2px;
+  padding:13px 28px;
+  border-radius:var(--r);
+  cursor:pointer;
+  text-transform:uppercase;
+  transition:all 0.2s;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.run-btn:hover {
+  background:#fff;
+  box-shadow:0 0 20px rgba(0,212,255,0.4);
+}
+.run-btn:active{transform:scale(0.97);}
+
+.example-row {
+  display:flex;gap:8px;flex-wrap:wrap;
+  margin-top:12px;
+}
+
+.ex-chip {
+  font-family:var(--mono);font-size:10px;
+  color:var(--text2);
+  border:1px solid var(--border);
+  padding:4px 12px;border-radius:20px;
+  cursor:pointer;transition:all 0.2s;
+  letter-spacing:0.5px;
+}
+.ex-chip:hover{color:var(--cyan);border-color:var(--cyan);}
+
+/* ── MAIN CONTENT ── */
+.main {
+  padding:24px 28px;
+  display:flex;flex-direction:column;gap:20px;
+}
+
+/* ── THREE COLUMN LIVE PANEL ── */
+.live-panel {
+  display:grid;
+  grid-template-columns:260px 1fr 240px;
+  gap:16px;
+}
+
+@media(max-width:1100px){
+  .live-panel{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:700px){
+  .live-panel{grid-template-columns:1fr;}
+}
+
+/* ── PANEL BASE ── */
+.panel {
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+}
+
+.panel-head {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+
+.panel-title {
+  font-family:var(--mono);font-size:10px;
+  color:var(--cyan);letter-spacing:2px;
+  text-transform:uppercase;
+}
+
+.panel-badge {
+  font-family:var(--mono);font-size:10px;
+  padding:2px 8px;border-radius:2px;
+  background:rgba(0,212,255,0.1);
+  color:var(--cyan);border:1px solid rgba(0,212,255,0.2);
+}
+
+.panel-body { padding:14px; }
+
+/* ── AGENT TRACE ── */
+.trace-list { display:flex;flex-direction:column;gap:2px; }
+
+.trace-item {
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 12px;border-radius:var(--r);
+  transition:background 0.2s;
+  position:relative;
+}
+.trace-item.done { background:rgba(0,229,160,0.04); }
+.trace-item.running { background:rgba(0,212,255,0.06); }
+.trace-item.waiting { opacity:0.4; }
+
+.trace-icon {
+  width:28px;height:28px;
+  border-radius:var(--r);
+  display:grid;place-items:center;
+  font-size:13px;flex-shrink:0;
+  border:1px solid var(--border2);
+}
+.trace-item.done .trace-icon { border-color:var(--green);background:rgba(0,229,160,0.08); }
+.trace-item.running .trace-icon { border-color:var(--cyan);background:rgba(0,212,255,0.08);animation:iconpulse 1.2s infinite; }
+@keyframes iconpulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,0.4);}50%{box-shadow:0 0 0 5px rgba(0,212,255,0);}}
+
+.trace-info { flex:1;min-width:0; }
+
+.trace-name {
+  font-family:var(--body);font-size:12px;
+  font-weight:500;color:#fff;
+  margin-bottom:2px;
+}
+
+.trace-status {
+  font-family:var(--mono);font-size:10px;
+  letter-spacing:1px;
+}
+.trace-status.done { color:var(--green); }
+.trace-status.running { color:var(--cyan); }
+.trace-status.waiting { color:var(--text3); }
+
+.trace-log {
+  font-family:var(--mono);font-size:9px;
+  color:var(--text2);margin-top:3px;
+  line-height:1.6;
+}
+
+.pulse-dot {
+  display:inline-block;width:5px;height:5px;
+  border-radius:50%;background:var(--cyan);
+  margin-right:4px;vertical-align:middle;
+  animation:dotblink 1s infinite;
+}
+@keyframes dotblink{0%,100%{opacity:1;}50%{opacity:0.1;}}
+
+.connector-line {
+  position:absolute;left:22px;bottom:-2px;
+  width:1px;height:2px;background:var(--border);
+}
+
+/* ── CLAIMS PANEL ── */
+.claims-list {
+  display:flex;flex-direction:column;gap:10px;
+  max-height:460px;overflow-y:auto;
+  padding-right:4px;
+}
+.claims-list::-webkit-scrollbar{width:3px;}
+.claims-list::-webkit-scrollbar-thumb{background:var(--border2);}
+
+.claim-card {
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:14px;
+  animation:cardIn 0.4s ease both;
+  position:relative;
+  overflow:hidden;
+}
+
+@keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.claim-card::before {
+  content:'';
+  position:absolute;top:0;left:0;
+  width:3px;height:100%;
+}
+.claim-card.verified::before { background:var(--green); }
+.claim-card.conflict::before { background:var(--red); }
+.claim-card.unverified::before { background:var(--amber); }
+
+.claim-text {
+  font-size:13px;color:#fff;
+  line-height:1.6;margin-bottom:10px;
+  font-weight:400;
+}
+
+.claim-meta {
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+
+.conf-wrap {
+  display:flex;align-items:center;gap:8px;flex:1;min-width:100px;
+}
+
+.conf-track {
+  flex:1;height:3px;
+  background:var(--border);border-radius:2px;
+  overflow:hidden;
+}
+
+.conf-fill {
+  height:100%;border-radius:2px;
+  transition:width 1s ease;
+}
+.conf-fill.high { background:var(--green); }
+.conf-fill.mid { background:var(--amber); }
+.conf-fill.low { background:var(--red); }
+
+.conf-pct {
+  font-family:var(--mono);font-size:11px;
+  min-width:32px;text-align:right;
+}
+.conf-pct.high{color:var(--green);}
+.conf-pct.mid{color:var(--amber);}
+.conf-pct.low{color:var(--red);}
+
+.claim-flag {
+  font-family:var(--mono);font-size:9px;
+  padding:2px 7px;letter-spacing:1px;
+  text-transform:uppercase;border:1px solid;
+  border-radius:2px;flex-shrink:0;
+}
+.claim-flag.verified{color:var(--green);border-color:var(--green);}
+.claim-flag.conflict{color:var(--red);border-color:var(--red);}
+.claim-flag.unverified{color:var(--amber);border-color:var(--amber);}
+
+.claim-sources {
+  font-family:var(--mono);font-size:9px;
+  color:var(--text2);margin-top:6px;
+}
+
+/* ── SOURCES PANEL ── */
+.source-list {
+  display:flex;flex-direction:column;gap:8px;
+  max-height:460px;overflow-y:auto;
+}
+.source-list::-webkit-scrollbar{width:3px;}
+.source-list::-webkit-scrollbar-thumb{background:var(--border2);}
+
+.source-item {
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:10px 12px;
+  position:relative;
+  transition:border-color 0.2s;
+}
+.source-item:hover{border-color:var(--border2);}
+.source-item.discarded{opacity:0.45;}
+
+.src-top {
+  display:flex;align-items:center;
+  justify-content:space-between;gap:6px;
+  margin-bottom:6px;
+}
+
+.src-domain {
+  font-family:var(--mono);font-size:11px;
+  color:var(--cyan);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  flex:1;
+}
+
+.trust-badge {
+  font-family:var(--mono);font-size:9px;
+  padding:2px 6px;border-radius:2px;
+  flex-shrink:0;
+}
+.trust-badge.high{background:rgba(0,229,160,0.12);color:var(--green);border:1px solid rgba(0,229,160,0.3);}
+.trust-badge.mid{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.25);}
+.trust-badge.low{background:rgba(255,74,107,0.1);color:var(--red);border:1px solid rgba(255,74,107,0.25);}
+.trust-badge.disc{background:rgba(90,122,150,0.1);color:var(--text2);border:1px solid var(--border);}
+
+.src-trust-row {
+  display:flex;align-items:center;gap:6px;
+  margin-bottom:6px;
+}
+
+.src-trust-track {
+  flex:1;height:2px;
+  background:var(--border);border-radius:1px;overflow:hidden;
+}
+.src-trust-fill {
+  height:100%;border-radius:1px;
+}
+.src-trust-fill.high{background:var(--green);}
+.src-trust-fill.mid{background:var(--amber);}
+.src-trust-fill.low{background:var(--red);}
+
+.src-trust-val {
+  font-family:var(--mono);font-size:10px;
+  min-width:24px;text-align:right;
+}
+.src-trust-val.high{color:var(--green);}
+.src-trust-val.mid{color:var(--amber);}
+.src-trust-val.low{color:var(--red);}
+
+.src-stats {
+  display:flex;gap:10px;
+}
+
+.src-stat {
+  font-family:var(--mono);font-size:9px;
+  color:var(--text2);
+  display:flex;align-items:center;gap:3px;
+}
+.src-stat .dot{width:5px;height:5px;border-radius:50%;}
+.src-stat .dot.agree{background:var(--green);}
+.src-stat .dot.conflict{background:var(--red);}
+
+/* ── BOTTOM ROW ── */
+.bottom-row {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+@media(max-width:700px){
+  .bottom-row{grid-template-columns:1fr;}
+}
+
+/* ── CONFLICT LOG ── */
+.conflict-list {
+  display:flex;flex-direction:column;gap:8px;
+}
+
+.conflict-item {
+  background:rgba(255,74,107,0.05);
+  border:1px solid rgba(255,74,107,0.2);
+  border-radius:var(--r);
+  padding:12px 14px;
+}
+
+.conflict-claims {
+  display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;
+}
+
+.conf-claim-a, .conf-claim-b {
+  flex:1;min-width:120px;
+  font-size:12px;color:var(--text);
+  line-height:1.5;
+  padding:8px;
+  background:var(--bg3);
+  border-radius:var(--r);
+  border-left:2px solid;
+}
+.conf-claim-a{border-color:var(--cyan);}
+.conf-claim-b{border-color:var(--red);}
+
+.conf-src {
+  font-family:var(--mono);font-size:9px;
+  color:var(--text2);margin-top:4px;
+}
+
+.conflict-resolution {
+  font-family:var(--mono);font-size:10px;
+  color:var(--amber);
+  padding:6px 10px;
+  background:rgba(255,179,0,0.06);
+  border-radius:var(--r);
+  border-left:2px solid var(--amber);
+}
+
+/* ── CITATION CHART ── */
+.chart-wrap {
+  padding:16px;
+  height:260px;
+  position:relative;
+}
+
+/* ── REPORT / EXEC SUMMARY ── */
+.report-section {
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+}
+
+.report-head {
+  display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:12px;
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+
+.report-title {
+  font-family:var(--display);
+  font-size:15px;font-weight:800;
+  color:#fff;
+}
+
+.score-row {
+  display:flex;gap:12px;flex-wrap:wrap;
+}
+
+.score-chip {
+  display:flex;flex-direction:column;align-items:center;
+  padding:8px 16px;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:var(--r);
+  min-width:80px;
+}
+
+.score-num {
+  font-family:var(--display);
+  font-size:24px;font-weight:800;line-height:1;
+  margin-bottom:2px;
+}
+.score-num.g{color:var(--green);}
+.score-num.b{color:var(--cyan);}
+.score-num.y{color:var(--amber);}
+
+.score-lbl {
+  font-family:var(--mono);font-size:9px;
+  color:var(--text2);letter-spacing:1px;
+  text-transform:uppercase;
+}
+
+.exec-body { padding:20px; }
+
+.exec-text {
+  font-size:14px;line-height:1.8;
+  color:var(--text);
+  border-left:3px solid var(--green);
+  padding-left:16px;
+  margin-bottom:20px;
+}
+
+/* ── COMPARE TABLE ── */
+.compare-table {
+  width:100%;border-collapse:collapse;
+  font-size:12px;
+}
+.compare-table th {
+  background:var(--bg3);
+  font-family:var(--mono);font-size:10px;
+  color:var(--cyan);letter-spacing:2px;
+  padding:10px 14px;text-align:left;
+  border-bottom:1px solid var(--border);
+  text-transform:uppercase;
+}
+.compare-table td {
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  color:var(--text);
+  vertical-align:top;
+  font-family:var(--body);
+}
+.compare-table tr:last-child td{border-bottom:none;}
+.compare-table tr:hover td{background:rgba(0,212,255,0.03);}
+.compare-table td:first-child{color:var(--text2);font-family:var(--mono);font-size:10px;}
+
+/* ── FOOTER BAR ── */
+.footer-bar {
+  padding:14px 28px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:var(--bg2);
+}
+
+.footer-label {
+  font-family:var(--mono);font-size:10px;
+  color:var(--text2);letter-spacing:1px;
+  margin-right:4px;
+}
+
+.footer-btn {
+  background:transparent;
+  border:1px solid var(--border2);
+  color:var(--text);
+  font-family:var(--mono);font-size:10px;
+  letter-spacing:1px;padding:6px 14px;
+  border-radius:var(--r);cursor:pointer;
+  text-transform:uppercase;
+  transition:all 0.2s;
+  display:flex;align-items:center;gap:6px;
+}
+.footer-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.footer-btn .icon{font-size:12px;}
+
+/* ── HISTORY SIDEBAR ── */
+.sidebar-overlay {
+  position:fixed;inset:0;
+  background:rgba(7,9,13,0.7);
+  backdrop-filter:blur(4px);
+  z-index:200;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.3s;
+}
+.sidebar-overlay.open{opacity:1;pointer-events:auto;}
+
+.sidebar {
+  position:fixed;top:0;right:0;bottom:0;
+  width:320px;
+  background:var(--bg2);
+  border-left:1px solid var(--border);
+  z-index:201;
+  transform:translateX(100%);
+  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  display:flex;flex-direction:column;
+}
+.sidebar.open{transform:translateX(0);}
+
+.sidebar-head {
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+
+.sidebar-title {
+  font-family:var(--mono);font-size:11px;
+  color:var(--cyan);letter-spacing:2px;
+  text-transform:uppercase;
+}
+
+.sidebar-close {
+  background:transparent;border:none;
+  color:var(--text2);cursor:pointer;
+  font-size:18px;line-height:1;
+  transition:color 0.2s;
+}
+.sidebar-close:hover{color:#fff;}
+
+.sidebar-body {
+  flex:1;overflow-y:auto;padding:12px;
+}
+.sidebar-body::-webkit-scrollbar{width:3px;}
+.sidebar-body::-webkit-scrollbar-thumb{background:var(--border2);}
+
+.history-item {
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  margin-bottom:8px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.history-item:hover{border-color:var(--cyan);background:rgba(0,212,255,0.04);}
+
+.hi-query {
+  font-size:12px;color:#fff;
+  margin-bottom:6px;line-height:1.5;
+}
+
+.hi-meta {
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:9px;
+  color:var(--text2);
+}
+
+.hi-conf {
+  font-family:var(--mono);font-size:10px;
+  padding:1px 6px;border-radius:2px;
+  margin-left:auto;
+}
+.hi-conf.high{color:var(--green);background:rgba(0,229,160,0.08);}
+.hi-conf.mid{color:var(--amber);background:rgba(255,179,0,0.08);}
+
+/* ── TABS ── */
+.tabs {
+  display:flex;gap:2px;
+  padding:0 20px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+.tab-btn {
+  background:transparent;border:none;
+  font-family:var(--mono);font-size:10px;
+  letter-spacing:1px;text-transform:uppercase;
+  color:var(--text2);padding:12px 16px;
+  cursor:pointer;border-bottom:2px solid transparent;
+  transition:all 0.2s;margin-bottom:-1px;
+}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+
+.tab-content{display:none;padding:20px;}
+.tab-content.active{display:block;}
+
+/* ── MODE TABS (query type) ── */
+.mode-selector {
+  display:flex;gap:6px;flex-wrap:wrap;
+  margin-top:14px;
+}
+.mode-chip {
+  font-family:var(--mono);font-size:10px;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:5px 14px;border-radius:20px;
+  border:1px solid var(--border2);
+  color:var(--text2);cursor:pointer;
+  transition:all 0.2s;
+}
+.mode-chip:hover{border-color:var(--cyan);color:var(--cyan);}
+.mode-chip.active{
+  background:rgba(0,212,255,0.1);
+  border-color:var(--cyan);color:var(--cyan);
+}
+
+/* ── DIFF VIEW ── */
+.diff-item {
+  padding:10px 14px;border-radius:var(--r);
+  font-size:13px;line-height:1.6;margin-bottom:8px;
+  border-left:3px solid;
+}
+.diff-item.new{background:rgba(0,229,160,0.06);border-color:var(--green);color:var(--text);}
+.diff-item.removed{background:rgba(255,74,107,0.06);border-color:var(--red);color:var(--text);}
+.diff-item.changed{background:rgba(255,179,0,0.06);border-color:var(--amber);color:var(--text);}
+.diff-tag{font-family:var(--mono);font-size:9px;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;}
+.diff-tag.new{color:var(--green);}
+.diff-tag.removed{color:var(--red);}
+.diff-tag.changed{color:var(--amber);}
+
+/* ── 6. MOBILE POLISH: CONFLICT CARDS ── */
+@media(max-width:600px) {
+  .conflict-claims { flex-direction: column; }
+  .conf-claim-a, .conf-claim-b { min-width: unset; width: 100%; }
+}
+
+/* ── UTILITIES ── */
+.divider{height:1px;background:var(--border);margin:16px 0;}
+.mt8{margin-top:8px;}
+.text-dim{color:var(--text2);font-size:11px;}
+
+/* ── 1. RUN BUTTON LOADING STATE ── */
+.run-btn.loading {
+  background: var(--bg3);
+  color: var(--cyan);
+  border: 1px solid var(--cyan);
+  cursor: not-allowed;
+  box-shadow: 0 0 14px rgba(0,212,255,0.2);
+  pointer-events: none;
+  position: relative;
+  overflow: hidden;
+}
+.run-btn.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(0,212,255,0.15) 50%, transparent 100%);
+  animation: btnShimmer 1.2s infinite;
+}
+@keyframes btnShimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ── 2. RADIAL CONFIDENCE GAUGE ── */
+.gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+}
+.gauge-svg { display: block; }
+.gauge-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text2);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* ── 3. TRUST BADGE TOOLTIPS ── */
+.trust-badge {
+  position: relative;
+  cursor: help;
+}
+.trust-badge .tt {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 1.5;
+  padding: 7px 10px;
+  border-radius: var(--r);
+  white-space: nowrap;
+  z-index: 50;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+.trust-badge .tt::after {
+  content: '';
+  position: absolute;
+  top: 100%; right: 10px;
+  border: 5px solid transparent;
+  border-top-color: var(--border2);
+}
+.trust-badge:hover .tt { display: block; }
+
+/* ── 4. EMPTY / ZERO STATE ── */
+.empty-state {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 28px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.empty-state.visible { display: flex; }
+.empty-icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+.empty-title {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.empty-sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+  letter-spacing: 0.5px;
+  max-width: 400px;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+.empty-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── 5. CONFIDENCE BAR ANIMATION ── */
+.conf-fill, .src-trust-fill {
+  width: 0 !important;
+  transition: width 1.2s cubic-bezier(0.4,0,0.2,1) !important;
+}
+
+/* ── 7. PANEL GLOW ON ACTIVE / FOCUSED ── */
+.panel:focus-within,
+.panel.active-glow {
+  border-color: var(--border2);
+  box-shadow: 0 0 18px rgba(0,212,255,0.08), 0 0 1px rgba(0,212,255,0.3);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.panel-head:has(#traceStatus) {
+  box-shadow: 0 0 16px rgba(0,212,255,0.07);
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══ TOP BAR ═══ -->
+<header class="topbar">
+  <a class="logo" href="#">
+    <div class="logo-mark">WI</div>
+    <span class="logo-text">Web<span>Intel</span></span>
+  </a>
+  <span class="topbar-meta">// AUTONOMOUS MULTI-AGENT INTELLIGENCE</span>
+  <div class="topbar-right">
+    <span class="live-dot">ONLINE</span>
+    <button class="tb-btn" onclick="toggleSidebar()">⧖ History</button>
+    <button class="tb-btn">? About</button>
+  </div>
+</header>
+
+<!-- ═══ QUERY SECTION ═══ -->
+<section class="query-section">
+  <div class="qs-top">
+    <span class="section-tag">// Query</span>
+  </div>
+
+  <div class="qs-row">
+    <div class="query-input-wrap">
+      <input class="query-input" id="queryInput" type="text"
+        placeholder="Enter a claim or research question to verify..."
+        value="Compare Jio vs Airtel vs Vi — subscribers, revenue, 5G coverage"/>
+    </div>
+
+    <div class="select-wrap">
+      <select class="qs-select" id="modeSelect">
+        <option>Quick (~5s)</option>
+        <option selected>Research (~20s)</option>
+        <option>Fact Check (~10s)</option>
+        <option>Deep Dive (~45s)</option>
+      </select>
+      <span class="select-arrow">▾</span>
+    </div>
+
+    <div class="select-wrap">
+      <select class="qs-select" id="typeSelect" onchange="switchQueryType()">
+        <option>Single</option>
+        <option selected>Compare</option>
+        <option>Track / Monitor</option>
+        <option>Summarise URL</option>
+      </select>
+      <span class="select-arrow">▾</span>
+    </div>
+
+    <button class="run-btn" id="runBtn" onclick="runPipeline()">▶ Analyze</button>
+  </div>
+
+  <div class="mode-selector">
+    <span class="mode-chip active" onclick="setChip(this,'Single')">Single</span>
+    <span class="mode-chip" onclick="setChip(this,'Compare')">Compare</span>
+    <span class="mode-chip" onclick="setChip(this,'Track')">Track</span>
+    <span class="mode-chip" onclick="setChip(this,'URL')">Summarise URL</span>
+  </div>
+
+  <div class="example-row">
+    <span class="ex-chip" onclick="setQ(this)">India GDP 2024</span>
+    <span class="ex-chip" onclick="setQ(this)">Jio vs Airtel vs Vi</span>
+    <span class="ex-chip" onclick="setQ(this)">AI regulations India 2025</span>
+    <span class="ex-chip" onclick="setQ(this)">Reliance Industries market cap</span>
+    <span class="ex-chip" onclick="setQ(this)">Arctic ice melt 2024 data</span>
+  </div>
+</section>
+
+<!-- ═══ EMPTY STATE (shown when no query run yet) ═══ -->
+<div class="empty-state" id="emptyState">
+  <div class="empty-icon">🔭</div>
+  <div class="empty-title">Ask WebIntel anything</div>
+  <div class="empty-sub">We'll verify it across 14+ sources, surface conflicts, and score confidence in seconds.</div>
+  <div class="empty-chips">
+    <span class="ex-chip" onclick="setQ(this);document.getElementById('emptyState').classList.remove('visible')">India GDP 2024</span>
+    <span class="ex-chip" onclick="setQ(this);document.getElementById('emptyState').classList.remove('visible')">Jio vs Airtel vs Vi</span>
+    <span class="ex-chip" onclick="setQ(this);document.getElementById('emptyState').classList.remove('visible')">AI regulations India 2025</span>
+    <span class="ex-chip" onclick="setQ(this);document.getElementById('emptyState').classList.remove('visible')">Reliance Industries market cap</span>
+  </div>
+</div>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<div id="mainContent">
+<main class="main">
+
+  <!-- THREE-COLUMN LIVE PANEL -->
+  <div class="live-panel">
+
+    <!-- LEFT: AGENT TRACE -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Agent Trace</span>
+        <span class="panel-badge" id="traceStatus">RUNNING</span>
+      </div>
+      <div class="panel-body">
+        <div class="trace-list" id="traceList">
+
+          <div class="trace-item done">
+            <div class="trace-icon">🧠</div>
+            <div class="trace-info">
+              <div class="trace-name">Planner Agent</div>
+              <div class="trace-status done">✓ COMPLETE</div>
+              <div class="trace-log">9 sub-queries generated<br/>3 entity batches dispatched</div>
+            </div>
+          </div>
+
+          <div class="trace-item done">
+            <div class="trace-icon">🌐</div>
+            <div class="trace-info">
+              <div class="trace-name">Research Agent</div>
+              <div class="trace-status done">✓ COMPLETE</div>
+              <div class="trace-log">Parallel search: 9 queries<br/>14 sources collected</div>
+            </div>
+          </div>
+
+          <div class="trace-item done">
+            <div class="trace-icon">📊</div>
+            <div class="trace-info">
+              <div class="trace-name">Extraction Agent</div>
+              <div class="trace-status done">✓ COMPLETE</div>
+              <div class="trace-log">18 claims extracted<br/>Structured JSON validated</div>
+            </div>
+          </div>
+
+          <div class="trace-item running">
+            <div class="trace-icon">🔍</div>
+            <div class="trace-info">
+              <div class="trace-name">Verification Agent</div>
+              <div class="trace-status running"><span class="pulse-dot"></span>VERIFYING</div>
+              <div class="trace-log">Cross-checking claim 11/18<br/>Conflict detected in revenue data</div>
+            </div>
+          </div>
+
+          <div class="trace-item waiting">
+            <div class="trace-icon">📈</div>
+            <div class="trace-info">
+              <div class="trace-name">Report Agent</div>
+              <div class="trace-status waiting">— WAITING</div>
+              <div class="trace-log">Awaiting verification</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: CLAIMS / COMPARE TABLE -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title" id="centerTitle">Extracted Claims</span>
+        <span class="panel-badge" id="claimCount">11 / 18</span>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('claims',this)">Claims</button>
+        <button class="tab-btn" onclick="switchTab('compare',this)">Compare</button>
+        <button class="tab-btn" onclick="switchTab('diff',this)">Track Diff</button>
+      </div>
+
+      <!-- CLAIMS TAB -->
+      <div class="tab-content active" id="tab-claims">
+        <div class="claims-list">
+
+          <div class="claim-card verified" style="animation-delay:0s">
+            <div class="claim-text">Jio leads subscriber base with 473 million users as of Q3 FY2025.</div>
+            <div class="claim-meta">
+              <div class="conf-wrap">
+                <div class="conf-track"><div class="conf-fill high" style="width:92%"></div></div>
+                <span class="conf-pct high">92%</span>
+              </div>
+              <span class="claim-flag verified">Verified</span>
+            </div>
+            <div class="claim-sources">4 sources agree · reuters.com, trai.gov.in +2</div>
+          </div>
+
+          <div class="claim-card conflict" style="animation-delay:0.08s">
+            <div class="claim-text">Jio's Q3 FY2025 revenue reported between ₹22,000–₹23,400 Cr across sources.</div>
+            <div class="claim-meta">
+              <div class="conf-wrap">
+                <div class="conf-track"><div class="conf-fill low" style="width:41%"></div></div>
+                <span class="conf-pct low">41%</span>
+              </div>
+              <span class="claim-flag conflict">Conflict</span>
+            </div>
+            <div class="claim-sources">2 sources conflict · economictimes.com vs livemint.com</div>
+          </div>
+
+          <div class="claim-card verified" style="animation-delay:0.16s">
+            <div class="claim-text">Airtel holds 229 million subscribers with strongest 5G rollout — 5,000+ cities covered.</div>
+            <div class="claim-meta">
+              <div class="conf-wrap">
+                <div class="conf-track"><div class="conf-fill high" style="width:88%"></div></div>
+                <span class="conf-pct high">88%</span>
+              </div>
+              <span class="claim-flag verified">Verified</span>
+            </div>
+            <div class="claim-sources">5 sources agree · airtel.in, trai.gov.in, reuters.com +2</div>
+          </div>
+
+          <div class="claim-card unverified" style="animation-delay:0.24s">
+            <div class="claim-text">Vi (Vodafone Idea) 5G commercial launch planned by mid-2025 pending funding.</div>
+            <div class="claim-meta">
+              <div class="conf-wrap">
+                <div class="conf-track"><div class="conf-fill mid" style="width:58%"></div></div>
+                <span class="conf-pct mid">58%</span>
+              </div>
+              <span class="claim-flag unverified">Unverified</span>
+            </div>
+            <div class="claim-sources">2 sources · economictimes.com, livemint.com</div>
+          </div>
+
+          <div class="claim-card verified" style="animation-delay:0.32s">
+            <div class="claim-text">TRAI Q3 FY2025 data confirms Jio at 39.8% market share, Airtel at 33.2%, Vi at 18.6%.</div>
+            <div class="claim-meta">
+              <div class="conf-wrap">
+                <div class="conf-track"><div class="conf-fill high" style="width:95%"></div></div>
+                <span class="conf-pct high">95%</span>
+              </div>
+              <span class="claim-flag verified">Verified</span>
+            </div>
+            <div class="claim-sources">6 sources agree · trai.gov.in is primary</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COMPARE TAB -->
+      <div class="tab-content" id="tab-compare">
+        <div style="overflow-x:auto;">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Criterion</th>
+                <th>🔵 Jio</th>
+                <th>🔴 Airtel</th>
+                <th>🟡 Vi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Subscribers</td>
+                <td style="color:#fff">473M <span style="color:var(--green);font-size:10px;">↑</span></td>
+                <td style="color:#fff">229M</td>
+                <td style="color:#fff">214M <span style="color:var(--red);font-size:10px;">↓</span></td>
+              </tr>
+              <tr>
+                <td>Market Share</td>
+                <td style="color:#fff">39.8%</td>
+                <td style="color:#fff">33.2%</td>
+                <td style="color:#fff">18.6%</td>
+              </tr>
+              <tr>
+                <td>Revenue (Q3)</td>
+                <td style="color:var(--amber)">₹22–23.4K Cr <span class="claim-flag conflict" style="font-size:8px;padding:1px 5px;">⚠</span></td>
+                <td style="color:#fff">₹14,781 Cr</td>
+                <td style="color:#fff">₹10,614 Cr</td>
+              </tr>
+              <tr>
+                <td>5G Cities</td>
+                <td style="color:#fff">~4,000+</td>
+                <td style="color:var(--green)">5,000+ <span style="color:var(--green);font-size:10px;">★</span></td>
+                <td style="color:var(--red)">Not launched</td>
+              </tr>
+              <tr>
+                <td>5G Launch</td>
+                <td style="color:#fff">Oct 2022</td>
+                <td style="color:#fff">Oct 2022</td>
+                <td style="color:var(--amber)">~mid-2025</td>
+              </tr>
+              <tr>
+                <td>ARPU</td>
+                <td style="color:#fff">₹181.7</td>
+                <td style="color:var(--green)">₹208.5 <span style="color:var(--green);font-size:10px;">★</span></td>
+                <td style="color:#fff">₹146.0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DIFF / TRACK TAB -->
+      <div class="tab-content" id="tab-diff">
+        <div class="text-dim mt8" style="margin-bottom:12px;">Track diff vs report from 7 days ago</div>
+        <div class="diff-item new">
+          <div class="diff-tag new">+ NEW CLAIM</div>
+          Airtel added 500 more 5G cities in January 2025, reaching 5,000+ city coverage.
+        </div>
+        <div class="diff-item removed">
+          <div class="diff-tag removed">− REMOVED</div>
+          Vi 5G launch expected Q4 FY2024 — claim now outdated, timeline shifted.
+        </div>
+        <div class="diff-item changed">
+          <div class="diff-tag changed">~ CHANGED</div>
+          Jio subscriber count updated from 468M → 473M. Confidence: 78% → 92%.
+        </div>
+        <div class="diff-item changed">
+          <div class="diff-tag changed">~ CHANGED</div>
+          ARPU for Airtel revised from ₹203 → ₹208.5 per latest earnings call.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: SOURCES VISITED -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Sources</span>
+        <span class="panel-badge">14 visited</span>
+      </div>
+      <div class="panel-body">
+        <div class="source-list">
+
+          <div class="source-item">
+            <div class="src-top">
+              <span class="src-domain">trai.gov.in</span>
+              <span class="trust-badge high">HIGH<span class="tt">Domain authority: very high<br/>Citation frequency: strong<br/>Recency: current data</span></span>
+            </div>
+            <div class="src-stats">
+              <span class="src-stat"><span class="dot agree"></span>6 agree</span>
+              <span class="src-stat"><span class="dot conflict"></span>0 conflict</span>
+            </div>
+          </div>
+
+          <div class="source-item">
+            <div class="src-top">
+              <span class="src-domain">reuters.com</span>
+              <span class="trust-badge high">HIGH<span class="tt">Domain authority: very high<br/>Citation frequency: strong<br/>Recency: current data</span></span>
+            </div>
+            <div class="src-trust-row">
+              <div class="src-trust-track"><div class="src-trust-fill high" style="width:93%"></div></div>
+              <span class="src-trust-val high">93</span>
+            </div>
+            <div class="src-stats">
+              <span class="src-stat"><span class="dot agree"></span>4 agree</span>
+              <span class="src-stat"><span class="dot conflict"></span>0 conflict</span>
+            </div>
+          </div>
+
+          <div class="source-item">
+            <div class="src-top">
+              <span class="src-domain">economictimes.com</span>
+              <span class="trust-badge mid">MED<span class="tt">Domain authority: moderate<br/>Citation frequency: average<br/>Recency: some conflicts found</span></span>
+            </div>
+            <div class="src-trust-row">
+              <div class="src-trust-track"><div class="src-trust-fill mid" style="width:65%"></div></div>
+              <span class="src-trust-val mid">65</span>
+            </div>
+            <div class="src-stats">
+              <span class="src-stat"><span class="dot agree"></span>3 agree</span>
+              <span class="src-stat"><span class="dot conflict"></span>1 conflict</span>
+            </div>
+          </div>
+
+          <div class="source-item">
+            <div class="src-top">
+              <span class="src-domain">livemint.com</span>
+              <span class="trust-badge mid">MED<span class="tt">Domain authority: moderate<br/>Citation frequency: average<br/>Recency: some conflicts found</span></span>
+            </div>
+            <div class="src-trust-row">
+              <div class="src-trust-track"><div class="src-trust-fill mid" style="width:63%"></div></div>
+              <span class="src-trust-val mid">63</span>
+            </div>
+            <div class="src-stats">
+              <span class="src-stat"><span class="dot agree"></span>2 agree</span>
+              <span class="src-stat"><span class="dot conflict"></span>1 conflict</span>
+            </div>
+          </div>
+
+          <div class="source-item">
+            <div class="src-top">
+              <span class="src-domain">airtel.in</span>
+              <span class="trust-badge high">HIGH<span class="tt">Official source: verified<br/>Citation frequency: consistent<br/>Recency: current data</span></span>
+            </div>
+            <div class="src-trust-row">
+              <div class="src-trust-track"><div class="src-trust-fill high" style="width:88%"></div></div>
+              <span class="src-trust-val high">88</span>
+            </div>
+            <div class="src-stats">
+              <span class="src-stat"><span class="dot agree"></span>3 agree</span>
+              <span class="src-stat"><span class="dot conflict"></span>0 conflict</span>
+            </div>
+          </div>
+
+          <div class="source-item discarded">
+            <div class="src-top">
+              <span class="src-domain">reddit.com/r/india</span>
+              <span class="trust-badge disc">DISCARDED<span class="tt">Domain authority: very low<br/>Score below threshold (30)<br/>Auto-excluded from analysis</span></span>
+            </div>
+            <div class="src-trust-row">
+              <div class="src-trust-track"><div class="src-trust-fill low" style="width:22%"></div></div>
+              <span class="src-trust-val low">22</span>
+            </div>
+            <div class="src-stats">
+              <span class="src-stat" style="color:var(--text3);">Below threshold — auto-discarded</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT SECTION -->
+  <div class="report-section">
+    <div class="report-head">
+      <div>
+        <div class="report-title">Intelligence Report</div>
+        <div class="text-dim mt8">Query: Jio vs Airtel vs Vi — subscribers, revenue, 5G coverage</div>
+      </div>
+      <div class="score-row">
+        <div class="gauge-wrap" title="Overall confidence score">
+          <svg class="gauge-svg" width="90" height="90" viewBox="0 0 90 90">
+            <circle cx="45" cy="45" r="36" fill="none" stroke="var(--border)" stroke-width="6"/>
+            <circle cx="45" cy="45" r="36" fill="none"
+              stroke="var(--green)" stroke-width="6"
+              stroke-dasharray="226.2" stroke-dashoffset="226.2"
+              stroke-linecap="round"
+              transform="rotate(-90 45 45)"
+              id="gaugeArc"/>
+            <text x="45" y="41" text-anchor="middle"
+              font-family="'Syne',sans-serif" font-size="18" font-weight="800" fill="#fff">82%</text>
+            <text x="45" y="55" text-anchor="middle"
+              font-family="'Syne Mono',monospace" font-size="7" fill="var(--text2)" letter-spacing="1">CONFIDENCE</text>
+          </svg>
+        </div>
+        <div class="score-chip">
+          <span class="score-num b">86</span>
+          <span class="score-lbl">Trust Avg</span>
+        </div>
+        <div class="score-chip">
+          <span class="score-num y">3</span>
+          <span class="score-lbl">Conflicts</span>
+        </div>
+        <div class="score-chip">
+          <span class="score-num b">14</span>
+          <span class="score-lbl">Sources</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="exec-body">
+      <div class="exec-text">
+        Jio dominates the Indian telecom market with <strong style="color:#fff">473M subscribers (39.8% share)</strong>, though its revenue figure remains in conflict between ₹22,000–₹23,400 Cr. Airtel leads in 5G coverage with <strong style="color:#fff">5,000+ cities</strong> and the highest ARPU at ₹208.5. Vi trails significantly and has yet to launch 5G commercially, with launch pending fundraise completion. TRAI data (trust: 95) is the authoritative source for subscriber and market share figures.
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-row">
+
+    <!-- CONFLICT LOG -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Conflict Log</span>
+        <span class="panel-badge" style="border-color:rgba(255,74,107,0.3);color:var(--red);background:rgba(255,74,107,0.08);">3 conflicts</span>
+      </div>
+      <div class="panel-body">
+        <div class="conflict-list">
+
+          <div class="conflict-item">
+            <div class="conflict-claims">
+              <div class="conf-claim-a">
+                Jio Q3 revenue: ₹23,400 Cr
+                <div class="conf-src">economictimes.com · trust 65</div>
+              </div>
+              <div class="conf-claim-b">
+                Jio Q3 revenue: ₹22,000 Cr
+                <div class="conf-src">livemint.com · trust 63</div>
+              </div>
+            </div>
+            <div class="conflict-resolution">⚡ Resolution: Numeric variance &gt;3% — marked unresolved. Surface to user.</div>
+          </div>
+
+          <div class="conflict-item">
+            <div class="conflict-claims">
+              <div class="conf-claim-a">
+                Airtel 5G cities: 5,000+
+                <div class="conf-src">airtel.in · trust 88</div>
+              </div>
+              <div class="conf-claim-b">
+                Airtel 5G cities: ~4,500
+                <div class="conf-src">techcrunch.com · trust 68</div>
+              </div>
+            </div>
+            <div class="conflict-resolution">✓ Resolution: Official source (airtel.in) wins. Confidence raised to 88%.</div>
+          </div>
+
+          <div class="conflict-item">
+            <div class="conflict-claims">
+              <div class="conf-claim-a">
+                Vi ARPU: ₹146
+                <div class="conf-src">trai.gov.in · trust 95</div>
+              </div>
+              <div class="conf-claim-b">
+                Vi ARPU: ₹152
+                <div class="conf-src">livemint.com · trust 63</div>
+              </div>
+            </div>
+            <div class="conflict-resolution">✓ Resolution: Government source (TRAI) wins. ARPU set to ₹146.</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- CITATION GRAPH -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Citation Graph</span>
+        <span class="panel-badge">Agreements vs Conflicts</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="citationChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+</div>
+
+<!-- ═══ FOOTER BAR ═══ -->
+<footer class="footer-bar">
+  <span class="footer-label">Export:</span>
+  <button class="footer-btn"><span class="icon">⬇</span> JSON</button>
+  <button class="footer-btn"><span class="icon">📄</span> PDF</button>
+  <button class="footer-btn"><span class="icon">💬</span> Slack</button>
+  <button class="footer-btn"><span class="icon">🕐</span> Schedule Monitor</button>
+  <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--text3);">
+    Generated: 2026-03-28 · Session #A9F2 · NeuroForge / WebIntel
+  </span>
+</footer>
+
+<!-- ═══ HISTORY SIDEBAR ═══ -->
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <span class="sidebar-title">Query History</span>
+    <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
+  </div>
+  <div class="sidebar-body">
+
+    <div class="history-item" onclick="loadHistory(this)">
+      <div class="hi-query">Compare Jio vs Airtel vs Vi — subscribers, revenue, 5G coverage</div>
+      <div class="hi-meta">
+        <span>Research · Compare</span>
+        <span>14 sources</span>
+        <span class="hi-conf high">82%</span>
+      </div>
+    </div>
+
+    <div class="history-item" onclick="loadHistory(this)">
+      <div class="hi-query">India GDP growth rate 2024 verification</div>
+      <div class="hi-meta">
+        <span>Fact Check · Single</span>
+        <span>8 sources</span>
+        <span class="hi-conf high">87%</span>
+      </div>
+    </div>
+
+    <div class="history-item" onclick="loadHistory(this)">
+      <div class="hi-query">AI regulations being considered in India 2025</div>
+      <div class="hi-meta">
+        <span>Deep Dive · Single</span>
+        <span>19 sources</span>
+        <span class="hi-conf mid">61%</span>
+      </div>
+    </div>
+
+    <div class="history-item" onclick="loadHistory(this)">
+      <div class="hi-query">Reliance Industries current market cap</div>
+      <div class="hi-meta">
+        <span>Research · Single</span>
+        <span>6 sources</span>
+        <span class="hi-conf high">91%</span>
+      </div>
+    </div>
+
+    <div class="history-item" onclick="loadHistory(this)">
+      <div class="hi-query">Arctic ice melt 2024 — latest scientific data</div>
+      <div class="hi-meta">
+        <span>Research · Single</span>
+        <span>11 sources</span>
+        <span class="hi-conf mid">74%</span>
+      </div>
+    </div>
+
+  </div>
+</aside>
+
+<script>
+// ── CHART ──
+const ctx = document.getElementById('citationChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: ['trai.gov.in','reuters.com','airtel.in','economictimes','livemint','techcrunch','wikipedia'],
+    datasets: [
+      {
+        label: 'Agreements',
+        data: [6,4,3,3,2,2,1],
+        backgroundColor: 'rgba(0,229,160,0.7)',
+        borderColor: 'rgba(0,229,160,1)',
+        borderWidth: 1,
+        borderRadius: 3,
+      },
+      {
+        label: 'Conflicts',
+        data: [0,0,0,1,1,1,0],
+        backgroundColor: 'rgba(255,74,107,0.7)',
+        borderColor: 'rgba(255,74,107,1)',
+        borderWidth: 1,
+        borderRadius: 3,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: '#5a7a96',
+          font: { family: "'Syne Mono', monospace", size: 10 },
+          boxWidth: 12,
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: '#5a7a96', font: { family: "'Syne Mono', monospace", size: 9 } },
+        grid: { color: '#1c2a3a' },
+      },
+      y: {
+        ticks: { color: '#5a7a96', font: { family: "'Syne Mono', monospace", size: 10 } },
+        grid: { color: '#1c2a3a' },
+        beginAtZero: true,
+      }
+    }
+  }
+});
+
+// ── 5. ANIMATE CONFIDENCE BARS ON LOAD ──
+function animateBars() {
+  document.querySelectorAll('.conf-fill').forEach(el => {
+    const target = el.getAttribute('data-width') || el.style.width;
+    el.setAttribute('data-width', target);
+    el.style.width = '0';
+    setTimeout(() => { el.style.width = target; }, 100);
+  });
+  document.querySelectorAll('.src-trust-fill').forEach(el => {
+    const target = el.getAttribute('data-width') || el.style.width;
+    el.setAttribute('data-width', target);
+    el.style.width = '0';
+    setTimeout(() => { el.style.width = target; }, 200);
+  });
+  // Animate gauge arc
+  const arc = document.getElementById('gaugeArc');
+  if (arc) {
+    const total = 226.2;
+    const pct = 0.82;
+    arc.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1)';
+    arc.style.strokeDashoffset = total;
+    setTimeout(() => {
+      arc.style.strokeDashoffset = total - (total * pct);
+    }, 300);
+  }
+}
+// Run on page load
+window.addEventListener('load', () => {
+  setTimeout(animateBars, 200);
+});
+
+// ── 1 & PIPELINE ANIMATION ──
+function runPipeline() {
+  const btn = document.getElementById('runBtn');
+  const items = document.querySelectorAll('.trace-item');
+  const badge = document.getElementById('traceStatus');
+
+  // Hide empty state if visible
+  document.getElementById('emptyState').classList.remove('visible');
+  document.getElementById('mainContent').style.display = '';
+
+  // Button loading state
+  btn.classList.add('loading');
+  btn.textContent = '⟳ Analyzing…';
+
+  items.forEach(i => {
+    i.className = 'trace-item waiting';
+    i.querySelector('.trace-status').className = 'trace-status waiting';
+    i.querySelector('.trace-status').textContent = '— WAITING';
+  });
+  badge.textContent = 'RUNNING';
+
+  // Panel glow on agent trace
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-glow'));
+  items[0].closest('.panel').classList.add('active-glow');
+
+  let step = 0;
+  const names = ['✓ COMPLETE','✓ COMPLETE','✓ COMPLETE','VERIFYING','✓ COMPLETE'];
+  function next() {
+    if (step >= items.length) {
+      badge.textContent = 'DONE';
+      btn.classList.remove('loading');
+      btn.textContent = '▶ Analyze';
+      animateBars();
+      return;
+    }
+    items[step].className = 'trace-item running';
+    const st = items[step].querySelector('.trace-status');
+    st.className = 'trace-status running';
+    st.innerHTML = '<span class="pulse-dot"></span>' + names[step];
+    setTimeout(() => {
+      items[step].className = 'trace-item done';
+      st.className = 'trace-status done';
+      st.textContent = names[step] === 'VERIFYING' ? '✓ COMPLETE' : names[step];
+      step++;
+      setTimeout(next, 700);
+    }, 1400);
+  }
+  next();
+}
+
+// ── TABS ──
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── SIDEBAR ──
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('open');
+}
+
+// ── HELPERS ──
+function setQ(el) { document.getElementById('queryInput').value = el.textContent; }
+function setChip(el, val) {
+  document.querySelectorAll('.mode-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('typeSelect').value =
+    val === 'URL' ? 'Summarise URL' : val === 'Track' ? 'Track / Monitor' : val;
+}
+function loadHistory(el) {
+  const q = el.querySelector('.hi-query').textContent;
+  document.getElementById('queryInput').value = q;
+  toggleSidebar();
+}
+function switchQueryType() {
+  const v = document.getElementById('typeSelect').value;
+  const map = {'Single':'Single','Compare':'Compare','Track / Monitor':'Track','Summarise URL':'URL'};
+  document.querySelectorAll('.mode-chip').forEach(c => {
+    c.classList.toggle('active', c.textContent === (map[v]||v));
+  });
+}
+
+// ── 7. PANEL GLOW ON FOCUS/HOVER ──
+document.querySelectorAll('.panel').forEach(panel => {
+  panel.addEventListener('mouseenter', () => {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-glow'));
+    panel.classList.add('active-glow');
+  });
+});
+</script>
+</body>
+</html>
