@@ -60,9 +60,12 @@ The system follows a **multi-agent design**, where each agent performs a special
   "confidence_score": 0.85
 }
 ```
-git clone https://github.com/your-username/multi-agent-web-ai.git
+git clone https://github.com/Suraj-8300/multi-agent-web-ai.git
+
 cd multi-agent-web-ai
+
 pip install -r requirements.txt
+
 uvicorn main:app --reload
   Cross-checks facts across multiple sources  
 
