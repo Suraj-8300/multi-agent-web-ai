@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebIntel — Autonomous Web Intelligence System</title>
+  <meta name="description" content="WebIntel autonomously dispatches parallel AI agents to search, verify facts, detect conflicts, and stream live confidence-scored intelligence reports." />
+  <meta name="theme-color" content="#060810" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="WebIntel — Autonomous Web Intelligence" />
+  <meta property="og:description" content="Parallel AI agents · Real-time streaming · Conflict detection · Confidence scoring" />
+  <meta property="og:type" content="website" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+
+<!-- Dot grid background -->
+<div id="dot-grid" aria-hidden="true"></div>
+
+<!-- ────────── Progress Bar ────────── -->
+<div id="progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+  <div id="progress-bar"></div>
+</div>
+
+<!-- ════════════════════════════ TOPBAR ════════════════════════════ -->
+<header id="topbar" role="banner">
+  <!-- Logo -->
+  <div class="logo" aria-label="WebIntel Home">
+    <div class="logo-mark" aria-hidden="true">🌐</div>
+    <span class="logo-name">Web<em>Intel</em></span>
+    <span class="logo-tag">Beta</span>
+  </div>
+
+  <!-- Center: live status -->
+  <div class="topbar-center" role="status" aria-live="polite">
+    <div class="status-pill" id="status-pill">
+      <span class="status-dot idle" id="status-dot"></span>
+      <span id="status-text">Ready</span>
+    </div>
+  </div>
+
+  <!-- Right: actions -->
+  <div class="topbar-right">
+    <button class="btn btn-ghost btn-sm" id="btn-history" title="View research history" aria-label="Open history">
+      📋 History
+    </button>
+    <a href="/docs" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" title="API Documentation">
+      📖 API
+    </a>
+  </div>
+</header>
+
+<!-- ════════════════════════════ HERO ════════════════════════════ -->
+<main>
+<section id="hero" aria-labelledby="hero-heading">
+
+  <div class="hero-eyebrow" aria-hidden="true">
+    <span class="hero-eyebrow-dot"></span>
+    Powered by Groq · Tavily · Supabase
+  </div>
+
+  <h1 id="hero-heading">
+    Autonomous<br/>
+    <span class="grad-text">Web Intelligence</span>
+  </h1>
+
+  <p class="subtitle">
+    Dispatches parallel AI agents to search the web, extract facts, cross-verify sources,
+    detect conflicts, and deliver <strong>confidence-scored reports</strong> — all streamed live.
+  </p>
+
+  <!-- ─── Query Form ─── -->
+  <form id="query-form" role="search" autocomplete="off" onsubmit="return false;">
+    <div class="query-shell" id="query-shell">
+
+      <!-- Main input row -->
+      <div class="query-input-row">
+        <span class="query-icon" aria-hidden="true">🔍</span>
+        <input
+          type="text"
+          id="query-input"
+          placeholder="What would you like to research? e.g. Compare Jio vs Airtel 5G coverage"
+          aria-label="Research query"
+          autocomplete="off"
+          spellcheck="true"
+          maxlength="500"
+        />
+        <button class="btn btn-primary btn-lg" id="btn-run" aria-label="Run research">
+          <span id="btn-run-icon" aria-hidden="true">⚡</span>
+          <span id="btn-run-label">Analyze</span>
+        </button>
+      </div>
+
+      <!-- Optional extra inputs (entities / URL) -->
+      <div class="extra-input-row" id="entities-row">
+        <span style="color:var(--text-3);font-size:12px;white-space:nowrap;flex-shrink:0">🏢 Entities:</span>
+        <input
+          type="text"
+          id="entities-input"
+          class="extra-input"
+          placeholder="e.g. Jio, Airtel, Vi   (comma-separated)"
+          aria-label="Entities to compare"
+        />
+      </div>
+
+      <div class="extra-input-row" id="url-input-row">
+        <span style="color:var(--text-3);font-size:12px;white-space:nowrap;flex-shrink:0">🔗 URL:</span>
+        <input
+          type="url"
+          id="url-input"
+          class="extra-input"
+          placeholder="https://example.com/article-to-verify"
+          aria-label="URL to summarise"
+        />
+      </div>
+
+      <!-- Footer: selects + keyboard hint -->
+      <div class="query-footer">
+        <div class="sel-wrap">
+          <span>⚙️</span>
+          <select id="mode-select" aria-label="Research mode" title="Select research depth">
+            <option value="quick">⚡ Quick (~5s)</option>
+            <option value="fact_check">🔍 Fact Check (~10s)</option>
+            <option value="research" selected>🔬 Research (~20s)</option>
+            <option value="deep_dive">🧠 Deep Dive (~45s)</option>
+          </select>
+        </div>
+
+        <div class="query-divider" aria-hidden="true"></div>
+
+        <div class="sel-wrap">
+          <span>🗂</span>
+          <select id="type-select" aria-label="Query type" title="Select query type" onchange="handleTypeChange()">
+            <option value="single">Single Query</option>
+            <option value="compare">Compare Entities</option>
+            <option value="track">Track / Monitor</option>
+            <option value="summarise_url">Summarise URL</option>
+          </select>
+        </div>
+
+        <div class="kbd-hint" aria-hidden="true">
+          Press <kbd class="kbd">Enter</kbd> to run
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- Demo chips -->
+  <div class="demo-chips" role="list" aria-label="Example queries">
+    <button
+      class="chip"
+      role="listitem"
+      onclick="setDemo('What is the current market cap of Reliance Industries?','research','single')"
+      title="Try this query"
+    >📊 Reliance Market Cap</button>
+    <button
+      class="chip"
+      role="listitem"
+      onclick="setDemo('Compare Jio vs Airtel vs Vi — subscribers, revenue, and 5G coverage','research','compare','Jio,Airtel,Vi')"
+    >📱 Jio vs Airtel vs Vi</button>
+    <button
+      class="chip"
+      role="listitem"
+      onclick="setDemo('What are the latest AI regulations being considered in India?','deep_dive','single')"
+    >🏛️ India AI Regulations</button>
+    <button
+      class="chip"
+      role="listitem"
+      onclick="setDemo('Latest advancements in quantum computing 2025','research','single')"
+    >⚛️ Quantum Computing</button>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════ STATS BAR ════════════════════════════ -->
+<div id="stats-bar" role="region" aria-label="Query statistics" aria-live="polite">
+  <div class="stat-pill" id="sp-sources">
+    🔗 Sources <span class="stat-val" id="stat-sources">0</span>
+  </div>
+  <div class="stat-sep" aria-hidden="true"></div>
+  <div class="stat-pill" id="sp-claims">
+    💡 Claims <span class="stat-val" id="stat-claims">0</span>
+  </div>
+  <div class="stat-sep" aria-hidden="true"></div>
+  <div class="stat-pill" id="sp-conflicts">
+    ⚔️ Conflicts <span class="stat-val" id="stat-conflicts">0</span>
+  </div>
+  <div class="stat-sep" aria-hidden="true"></div>
+  <div class="stat-pill" id="sp-resolved">
+    ✅ Resolved <span class="stat-val" id="stat-resolved">0</span>
+  </div>
+  <div class="stat-sep" aria-hidden="true"></div>
+  <div class="stat-pill" id="sp-confidence">
+    🎯 Confidence <span class="stat-val" id="stat-confidence">—</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════ LIVE PANEL (3-col) ════════════════ -->
+<div id="main-panel" role="region" aria-label="Live research panels">
+
+  <!-- ─── Left: Agent Trace ─── -->
+  <section class="panel animate-panel" id="panel-trace" aria-label="Agent trace log">
+    <header class="panel-header">
+      <span class="panel-header-icon" aria-hidden="true">🤖</span>
+      <span class="panel-title">Agent Trace</span>
+      <span class="count-badge" id="trace-count" aria-label="Trace steps">0</span>
+    </header>
+    <div class="panel-body" id="trace-list" role="log" aria-live="polite" aria-label="Agent steps">
+      <div class="empty-state">
+        <div class="empty-icon">🕹️</div>
+        <span>Agent steps will appear here</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Center: Claims / Compare / Diff ─── -->
+  <section class="panel animate-panel" id="panel-center" aria-label="Verified claims">
+    <header class="panel-header">
+      <span class="panel-header-icon" aria-hidden="true">💡</span>
+      <span class="panel-title" id="center-panel-title">Verified Claims</span>
+      <span class="count-badge" id="claims-count" aria-label="Claims count">0</span>
+    </header>
+    <div class="panel-body" id="claims-list" role="feed" aria-live="polite" aria-label="Claim cards">
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <span>Verified claims stream here in real time</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Right: Sources ─── -->
+  <section class="panel animate-panel" id="panel-sources" aria-label="Sources visited">
+    <header class="panel-header">
+      <span class="panel-header-icon" aria-hidden="true">🌐</span>
+      <span class="panel-title">Sources</span>
+      <span class="count-badge" id="sources-count" aria-label="Sources count">0</span>
+    </header>
+    <div class="panel-body" id="sources-list" role="list" aria-label="Source list">
+      <div class="empty-state">
+        <div class="empty-icon">🌍</div>
+        <span>Sources will appear here</span>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /#main-panel -->
+
+<!-- ════════════════════════════ BOTTOM ROW ════════════════════════════ -->
+<div id="bottom-row" role="region" aria-label="Conflict log and citation graph">
+
+  <!-- Conflict Log -->
+  <section class="panel" style="max-height:380px" aria-label="Conflict log">
+    <header class="panel-header">
+      <span class="panel-header-icon" aria-hidden="true">⚔️</span>
+      <span class="panel-title">Conflict Log</span>
+      <span class="count-badge" id="conflict-count" aria-label="Conflict count">0</span>
+    </header>
+    <div class="panel-body" id="conflict-list" role="log" aria-live="polite">
+      <div class="empty-state">
+        <div class="empty-icon">✅</div>
+        <span>No conflicts detected yet</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Citation Graph -->
+  <section class="panel" style="max-height:380px;overflow:visible" aria-label="Citation graph">
+    <header class="panel-header">
+      <span class="panel-header-icon">📊</span>
+      <span class="panel-title">Citation Graph</span>
+    </header>
+    <div id="chart-wrap" role="img" aria-label="Bar chart of source agreements vs conflicts">
+      <canvas id="cite-chart"></canvas>
+    </div>
+  </section>
+
+</div><!-- /#bottom-row -->
+
+<!-- ════════════════════════════ REPORT SUMMARY ════════════════════════ -->
+<div id="report-summary" role="region" aria-label="Report summary">
+  <div class="summary-card">
+
+    <div class="summary-left">
+      <div class="summary-title">🎉 Research Complete</div>
+      <div class="summary-query" id="summary-query-text"></div>
+    </div>
+
+    <div class="summary-stats" role="group" aria-label="Report statistics">
+      <div class="summary-stat">
+        <div class="su-val grad-text" id="sum-confidence">—</div>
+        <div class="su-label">Confidence</div>
+      </div>
+      <div class="summary-stat">
+        <div class="su-val" style="color:var(--green)" id="sum-claims">0</div>
+        <div class="su-label">Claims</div>
+      </div>
+      <div class="summary-stat">
+        <div class="su-val" style="color:var(--cyan)" id="sum-sources">0</div>
+        <div class="su-label">Sources</div>
+      </div>
+      <div class="summary-stat">
+        <div class="su-val" style="color:var(--amber)" id="sum-conflicts">0</div>
+        <div class="su-label">Conflicts</div>
+      </div>
+    </div>
+
+    <div class="export-row">
+      <button class="btn btn-ghost" id="btn-export-json" onclick="exportJSON()" title="Download report as JSON">
+        ⬇️ Export JSON
+      </button>
+      <button class="btn btn-ghost" onclick="scheduleMonitor()" title="Schedule recurring query monitor">
+        📅 Monitor
+      </button>
+      <button class="btn btn-ghost" onclick="shareReport()" title="Copy shareable link">
+        🔗 Share
+      </button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ════════════════════════════ HISTORY SIDEBAR ════════════════════════ -->
+<div id="overlay" onclick="closeHistory()" aria-hidden="true"></div>
+
+<aside id="history-sidebar" role="complementary" aria-label="Research history" aria-hidden="true">
+  <div class="sidebar-header">
+    <span class="sidebar-title">📋 Research History</span>
+    <button class="btn btn-ghost btn-sm" onclick="closeHistory()" aria-label="Close history panel">✕ Close</button>
+  </div>
+  <div class="history-list" id="history-list" role="list" aria-label="Past research queries">
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <span>Loading history…</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ════════════════════════════ TOAST CONTAINER ═══════════════════════ -->
+<div id="toast-container" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- ─── Scripts ─── -->
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

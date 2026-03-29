@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-dotenv
+groq
+tavily-python
+supabase==2.10.0
+pydantic
+httpx
